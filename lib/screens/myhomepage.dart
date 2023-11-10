@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:screen_protector/screen_protector.dart';
 import 'package:todolist_app/constant/colors.dart';
 import 'package:todolist_app/widget/todo_items.dart';
 
@@ -26,7 +27,19 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     _foundToDo = todoList;
+    // Prevent screenshots on Android
+    ScreenProtector.protectDataLeakageOn();
+    ScreenProtector.preventScreenshotOn();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    // Allow screenshots on Android
+    //the dispose method is used to deactivate the screenshot prevention when the widget is no longer in use.
+    ScreenProtector.protectDataLeakageOff();
+    ScreenProtector.preventScreenshotOff();
+    super.dispose();
   }
 
   @override
@@ -174,10 +187,13 @@ class _MyHomePageState extends State<MyHomePage> {
   //function to add items to the list
   void _addToDoItem(String toDo) {
     setState(
-      () {
+          () {
         todoList.add(
           ToDo(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            id: DateTime
+                .now()
+                .millisecondsSinceEpoch
+                .toString(),
             todoText: toDo,
           ),
         );
@@ -186,10 +202,6 @@ class _MyHomePageState extends State<MyHomePage> {
     _todoController.clear();
   }
 
-  //callback function
-  void _runFilterCallback(String enteredKeyword) {
-    _runFilter(enteredKeyword);
-  }
 
 // the search function to search the Todo list
   void _runFilter(String enteredKeyword) {
@@ -198,7 +210,8 @@ class _MyHomePageState extends State<MyHomePage> {
       results = todoList;
     } else {
       results = todoList
-          .where((item) => item.todoText!
+          .where((item) =>
+          item.todoText
               .toLowerCase()
               .contains(enteredKeyword.toLowerCase()))
           .toList();
