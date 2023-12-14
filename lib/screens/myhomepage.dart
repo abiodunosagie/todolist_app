@@ -1,42 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:screen_protector/screen_protector.dart';
 import 'package:todolist_app/constant/colors.dart';
 import 'package:todolist_app/widget/todo_items.dart';
 
 import '../model/todo.dart';
+import '../state/todolist_model.dart';
 import '../widget/buildAppBar.dart';
 import '../widget/searchBox.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
+  const MyHomePage({Key? key}) : super(key: key);
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  //i called the todolist here using a variable.
-  final todoList = ToDo.todoList();
+  late List<ToDo> _foundToDo;
   final _todoController = TextEditingController();
-  List<ToDo> _foundToDo = [];
 
   void runFilterCallback(String enteredKeyword) {
     _runFilter(enteredKeyword);
   }
 
   @override
-  void initState() {
-    _foundToDo = todoList;
-    // Prevent screenshots on Android
+  void didChangeDependencies() {
+    _foundToDo = Provider.of<ToDoListModel>(context).todos;
     ScreenProtector.protectDataLeakageOn();
     ScreenProtector.preventScreenshotOn();
-    super.initState();
+    super.didChangeDependencies();
   }
 
   @override
   void dispose() {
-    // Allow screenshots on Android
-    //the dispose method is used to deactivate the screenshot prevention when the widget is no longer in use.
     ScreenProtector.protectDataLeakageOff();
     ScreenProtector.preventScreenshotOff();
     super.dispose();
@@ -51,8 +48,7 @@ class _MyHomePageState extends State<MyHomePage> {
       },
       child: Scaffold(
         backgroundColor: tdBgColor,
-        appBar: appBar.buildAppBar(),
-        //body
+        appBar: appBar.buildAppBar(context),
         body: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: 10,
@@ -75,7 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             bottom: 10,
                           ),
                           child: const Text(
-                            'All ToDos',
+                            'ToDos',
                             style: TextStyle(
                               fontSize: 25,
                               fontWeight: FontWeight.w500,
@@ -130,7 +126,6 @@ class _MyHomePageState extends State<MyHomePage> {
                     const SizedBox(
                       width: 10,
                     ),
-                    // An add button
                     Container(
                       margin: const EdgeInsets.only(),
                       child: ElevatedButton(
@@ -155,7 +150,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: const Text(
                           '+',
                           style: TextStyle(
-                            fontSize: 40,
+                            fontSize: 35,
                             color: Colors.white,
                           ),
                         ),
@@ -173,47 +168,40 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _deleteToDoItem(String id) {
     setState(() {
-      todoList.removeWhere((item) => item.id == id);
+      _foundToDo.removeWhere((item) => item.id == id);
     });
   }
 
-  //function to handle the list change
   void _handleToDoChange(ToDo todo) {
     setState(() {
       todo.isDone = !todo.isDone;
     });
   }
 
-  //function to add items to the list
   void _addToDoItem(String toDo) {
-    setState(
-          () {
-        todoList.add(
-          ToDo(
-            id: DateTime
-                .now()
-                .millisecondsSinceEpoch
-                .toString(),
-            todoText: toDo,
-          ),
-        );
-      },
-    );
+    setState(() {
+      _foundToDo.add(
+        ToDo(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          todoText: toDo,
+        ),
+      );
+    });
     _todoController.clear();
   }
 
-
-// the search function to search the Todo list
   void _runFilter(String enteredKeyword) {
     List<ToDo> results = [];
     if (enteredKeyword.isEmpty) {
-      results = todoList;
+      results = Provider.of<ToDoListModel>(context).todos;
     } else {
-      results = todoList
-          .where((item) =>
-          item.todoText
-              .toLowerCase()
-              .contains(enteredKeyword.toLowerCase()))
+      results = Provider.of<ToDoListModel>(context)
+          .todos
+          .where(
+            (item) => item.todoText.toLowerCase().contains(
+                  enteredKeyword.toLowerCase(),
+                ),
+          )
           .toList();
     }
     setState(() {
